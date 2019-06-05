@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+ content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>贪吃蛇</title>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+        }
+        h1{
+            width: 130px;
+            margin: 20px auto;
+        }
+        h4{
+            width: 80px;
+            margin: 10px auto;
+        }
+        #main{
+            margin: 20px auto;
+            border: black 3px solid;
+            position: relative;
+        }
+        .food{
+            position: absolute;
+            display: inline-block;
+            background-color: red;
+            border-radius: 50%;
+            border: black 2px solid;
+            box-sizing: border-box;
+        }
+        .snake{
+            position: absolute;
+            display: inline-block;
+            border-radius: 50%;
+        }
+        #main .snake:nth-child(1){
+            border: black 2px solid;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+<h1>贪吃蛇</h1>
+<h4>成绩:<span>0</span></h4>
+<div id="main" class="main"></div>
+ 
+<script src="http://www.jq22.com/jquery/jquery-3.3.1.js"></script>
+<script>
+    var mapWidth = 300,//地图宽度，单位px,可更改
+ mapHeight = 300,//地图高度，单位px,可更改
+ unitSize = 20,//食物大小，也就是一个单位格子边长，可更改
+ color = ["red", "orange", "pink", "green", "cyan", "blue", "purple"],//颜色数组，
+ direction = '',//蛇运动的方向，第一次点击方向键时获取
+ foodXY = [],//食物坐标数组，每个食物由X坐标，Y坐标和颜色组成
+ snakeBody = [],//蛇身全路径数组，每节由X坐标，Y坐标和颜色组成，开始默认为3节绿色
+ timer = null,//定时器
+ achievement = 0;
+    (function () {
+        $('#main').height(mapHeight).width(mapWidth);
+ 
+        //初始化蛇 并渲染 默认长度为3节
+ initSnake();
+ 
+        //默认先创建1个食物
+ creatFood();
+ 
+        // 监听键盘按下方向键，改变全局变量direction的值
+ $(document).keydown(function (event) {
+ 
+            let headX = snakeBody[0][0],
+                headY = snakeBody[0][1],
+                bodyX = snakeBody[1][0],
+                bodyY = snakeBody[1][1];
+            //利用蛇头和第二节的xy大小判断，禁用180度的调转，比如原本朝右不能马上朝左
+ if (event.keyCode == 37) {
+                if (headX > bodyX) return;
+                direction = "left";
+            } else if (event.keyCode == 38) {
+                if (headY > bodyY) return;
+                direction = "top";
+            } else if (event.keyCode == 39) {
+                if (headX < bodyX) return;
+                direction = "right";
+            } else if (event.keyCode == 40) {
+                if (headY < bodyY) return;
+                direction = "down";
+            }
+        });
+ 
+ 
+        //定时器，单位时间内向某方向移动一个单位
+ timer = setInterval(function () {
+            //只有方向键被触发 定时器中的函数才执行
+ if(direction=="")return;
+ 
+            //获取下一步蛇头的坐标
+ let arr = nextHeadXY(),
+                headX = arr[0],
+                headY = arr[1];
+ 
+            //碰到墙壁终止定时器
+ if ((snakeBody[0][0] == mapWidth - unitSize && direction == "right") ||
+                (snakeBody[0][0] == 0 && direction == "left") ||
+                (snakeBody[0][1] == mapHeight - unitSize && direction == "down") ||
+                (snakeBody[0][1] == 0 && direction == "top")) {
+                clearInterval(timer);
+                alert('die');
+                return;
+            }
+ 
+            //判断下一步坐标点是否是食物
+ if (compare2dimArray([headX, headY], foodXY) != -1) {
+                $('.food').remove(); //移除食物
+ 
+ snakeBody.unshift(foodXY[0]); //将食物信息加载到蛇神
+ creatSnake();//渲染出蛇
+ 
+ foodXY = [];//将食物信息置为空
+ achievement += 1;
+                $('h4 span').text(achievement);
+                creatFood();
+            } else {
+                moveSnake();
+                creatSnake();
+            }
+ 
+        }, 300);
+ 
+    })();
+ 
+    // 在一个区间内随机生成一个整数，参数为最小最大值
+ function ranNum(min, max) {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+ 
+    //随机生成一种颜色，不需参数，颜色值在全局变量color中定义
+ function ranColor() {
+        let len = color.length,
+            index = ranNum(0, len - 1);
+        return color[index];
+    }
+ 
+    // 在容器内随机生成X、Y坐标和,把坐标按照一个食物单位划分
+ function creatXY() {
+        let x = ranNum(0, mapWidth / unitSize - 1),
+            y = ranNum(0, mapHeight / unitSize - 1);
+        return [x * unitSize, y * unitSize];
+    }
+ 
+    // 判断一个多维数组前两项是否和另一个多维数组每项中的前两项相同，可拓展
+    // 相同则返回索引，不存在返回-1
+ function compare2dimArray(arr1, arr) {
+        let flag = -1;
+        arr.forEach(function (value, index) {
+            if (value[0] == arr1[0] && value[1] == arr1[1]) {
+                flag = index;
+            }
+        });
+        return flag;
+    }
+ 
+    //初始化蛇 并渲染 默认长度为3节
+ function initSnake() {
+        let arr = [];
+        do {
+            arr = creatXY();
+        } while (arr[0] > mapWidth - 3 * unitSize || arr[0] == 0) ;//超出范围 初始化时身体会在容器外部
+ arr[2] = "gray";
+        snakeBody.push(arr);
+        snakeBody.push([arr[0] + unitSize, arr[1], "darkgray"]);
+        snakeBody.push([arr[0] + unitSize * 2, arr[1], "lightgray"]);
+        creatSnake();
+    }
+ 
+    //获取蛇身全路径 渲染出每一节
+ function creatSnake() {
+        $('.snake').remove();//清空之前的蛇
+ let str = '';
+        for (let i = 0; i < snakeBody.length; i++) {
+ 
+            str += `<span class="snake" style="width:${unitSize}px;height:${unitSize}px;
+                left:${snakeBody[i][0]}px;top:${snakeBody[i][1]}px;background-color: ${snakeBody[i][2]}"></span>`;
+        }
+        $('#main').append(str);
+    }
+ 
+    //创建并生成一个食物,不需参数 如果食物在蛇身路径上，则重新生成
+ function creatFood() {
+        let arr = [];
+        do {
+            arr = creatXY();
+        } while (compare2dimArray(arr, snakeBody) != -1);
+ 
+        arr.push(ranColor());//把食物颜色加入数组
+ 
+ let str = `<span class="food" style="width:${unitSize}px;height:${unitSize}px;
+                left:${arr[0]}px;top:${arr[1]}px;background-color: ${arr[2]}"></span>`;
+        foodXY.push(arr);//把食物路径、颜色参数加入到全局变量foodxy中
+ $('#main').append(str);
+    }
+ 
+    //获取蛇下一个时间点蛇身全路径
+ function moveSnake() {
+        switch (direction) {
+            case "left":
+                let arr1 = [];
+                arr1[0] = [snakeBody[0][0] - unitSize, snakeBody[0][1], snakeBody[0][2]];
+                for (let i = 1; i < snakeBody.length; i++) {
+                    arr1[i] = [snakeBody[i - 1][0], snakeBody[i - 1][1], snakeBody[i][2]];
+                }
+                snakeBody = arr1;
+                break;
+            case "right":
+                let arr2 = [];
+                arr2[0] = [snakeBody[0][0] + unitSize, snakeBody[0][1], snakeBody[0][2]];
+                for (let i = 1; i < snakeBody.length; i++) {
+                    arr2[i] = [snakeBody[i - 1][0], snakeBody[i - 1][1], snakeBody[i][2]];
+                }
+                snakeBody = arr2;
+                break;
+            case "top":
+                let arr3 = [];
+                arr3[0] = [snakeBody[0][0], snakeBody[0][1] - unitSize, snakeBody[0][2]];
+                for (let i = 1; i < snakeBody.length; i++) {
+                    arr3[i] = [snakeBody[i - 1][0], snakeBody[i - 1][1], snakeBody[i][2]];
+                }
+                snakeBody = arr3;
+                break;
+            case "down":
+                let arr4 = [];
+                arr4[0] = [snakeBody[0][0], snakeBody[0][1] + unitSize, snakeBody[0][2]];
+                for (let i = 1; i < snakeBody.length; i++) {
+                    arr4[i] = [snakeBody[i - 1][0], snakeBody[i - 1][1], snakeBody[i][2]];
+                }
+                snakeBody = arr4;
+                break;
+            default:
+                break;
+        }
+    }
+ 
+    //下一个时间点蛇头的坐标
+ function nextHeadXY() {
+        let headX = snakeBody[0][0],
+            headY = snakeBody[0][1];
+        switch (direction) {
+            case "left":
+                headX -= unitSize;
+                break;
+            case "right":
+                headX += unitSize;
+                break;
+            case "top":
+                headY -= unitSize;
+                break;
+            case "dowm":
+                headX += unitSize;
+                break;
+            default:
+                break;
+        }
+        return [headX, headY]
+    }
+ 
+</script>
+</body>
+</html>
+

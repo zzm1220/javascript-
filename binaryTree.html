@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>javascript</title>
+</head>
+<body>
+	<script src="./binaryTree.js"></script>
+	<script type="text/javascript">
+		const biTree = new BinaryTree();
+		biTree.init([13,5,4,12,333,222,33]);
+		console.log(biTree.getRoot());
+		console.log("中序遍历");
+		biTree.inOrderTraverse(function(key){
+			console.log(key);
+		});
+		console.log("前序遍历");
+		biTree.preOrderTraverse(function(key){
+			console.log(key);
+		});
+		console.log("后序遍历");
+		biTree.nextOrderTraverse(function(key){
+			console.log(key)
+		})
+	</script>
+</body>
+</html>
