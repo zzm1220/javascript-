@@ -35,7 +35,7 @@
 		return target;
 	}
 	zhiQuery.each = function(obj, callback, args) {
-		
+
 	}
 	zhiQuery.fn.extend({
 		get: function(num) {
